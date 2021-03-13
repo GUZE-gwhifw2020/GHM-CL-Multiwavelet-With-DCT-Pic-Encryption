@@ -1,10 +1,19 @@
+%% Birth Certificate
+% ===================================== %
+% DATE OF BIRTH:    2021.03.03
+% NAME OF FILE:     CL
+% FILE OF PATH:     /..
+% FUNC:
+%   CL变换测试文件。
+% ===================================== %
+
 clc;clearvars;close all;
 %% 图片
 aP = double(imread('1.png')) / 256;
 tic
 
 % 图片大小N
-N = size(aP,1);
+N = size(aP,1) + 4;
 nChannel = size(aP,3);
 
 %% 滤波系数
@@ -26,8 +35,9 @@ Pre = [1/4 1/4;1/(1+sqrt(7)) -1/(1+sqrt(7))];
 % 后置滤波器
 Post = [2 (1+sqrt(7))/2;2 -(1+sqrt(7))/2];
 
-%% Step0 通道提取
-A = squeeze(aP(:,:,1));
+%% Step0 通道提取与延拓
+A = zeros(size(aP,[1 2]) + 4);
+A(5:end,5:end) = squeeze(aP(:,:,1));
 
 %% Step1-1 行前置滤波
 B = zeros(N);
@@ -190,8 +200,10 @@ imshow(RB);xlabel('列后置滤波 - RB')
 subplot(3,3,9);
 imshow(RA);xlabel('行后置滤波 - RA')
 %%
-fprintf('MSE = \t%.10f\n', mse(RA,A))
-fprintf('Local MSE = \t%.10f\n', mse(RA(4:end-4,4:end-4),A(4:end-4,4:end-4)))
+A = A(5:end,5:end);
+RA = RA(5:end,5:end);
+fprintf('\tMSE = %.6e\n', mse(RA,A))
+fprintf('\tPixel Diff: %d/%d\n', nnz(round(A*256) ~= round(RA*256)), numel(RA));
 figure
 imshow(RA)
 
