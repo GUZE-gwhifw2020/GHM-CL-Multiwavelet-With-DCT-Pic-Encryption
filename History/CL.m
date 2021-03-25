@@ -2,9 +2,11 @@
 % ===================================== %
 % DATE OF BIRTH:    2021.03.03
 % NAME OF FILE:     CL
-% FILE OF PATH:     /..
+% FILE OF PATH:     /History
 % FUNC:
-%   CL变换测试文件。
+%   CL正逆变换测试文件。
+%   修改为CL函数后退回History文件夹。
+%   2021.03.25 - 修改边界处理问题
 % ===================================== %
 
 clc;clearvars;close all;
@@ -13,7 +15,7 @@ aP = double(imread('1.png')) / 256;
 tic
 
 % 图片大小N
-N = size(aP,1) + 4;
+N = size(aP,1);
 nChannel = size(aP,3);
 
 %% 滤波系数
@@ -35,9 +37,8 @@ Pre = [1/4 1/4;1/(1+sqrt(7)) -1/(1+sqrt(7))];
 % 后置滤波器
 Post = [2 (1+sqrt(7))/2;2 -(1+sqrt(7))/2];
 
-%% Step0 通道提取与延拓
-A = zeros(size(aP,[1 2]) + 4);
-A(5:end,5:end) = squeeze(aP(:,:,1));
+%% Step0 通道提取
+A = squeeze(aP(:,:,1));
 
 %% Step1-1 行前置滤波
 B = zeros(N);
@@ -73,8 +74,9 @@ for mm = 1:N/4
             if(N/2+nn <= N)
                 Crow = [C(ii,nn);C(ii,N/2+nn)];
             else
+                Crow = [C(ii,mod(N/2+nn-1,N)+1);C(ii,nn)];
                 % Crow = [C(ii,nn);C(ii,mod(N/2+nn-1,N)+1)];
-                Crow = [C(ii,nn);0];
+                % Crow = [C(ii,nn);0];
             end
             DrowL = DrowL + L{nn-2*mm+1}*Crow;
             DrowH = DrowH + H{nn-2*mm+1}*Crow;
@@ -97,8 +99,9 @@ for mm = 1:N/4
             if(N/2+nn <= N)
                 Dcol = [D(nn,ii);D(N/2+nn,ii)];
             else
+                Dcol = [D(mod(N/2+nn-1,N)+1,ii);D(nn,ii)];
                 % Dcol = [D(nn,ii);D(mod(N/2+nn-1,N)+1,ii)];
-                Dcol = [D(nn,ii);0];
+                % Dcol = [D(nn,ii);0];
             end
             ErowL = ErowL + L{nn-2*mm+1}*Dcol;
             ErowH = ErowH + H{nn-2*mm+1}*Dcol;
@@ -117,44 +120,48 @@ for nn = 1:N/2
     for ii = 1:N
         RDcolL = [0;0];
         RDcolH = [0;0];
-        for mm = 1:N/4
-            if(nn-2*mm >= 0 && nn-2*mm <=2)
-                
-                EcolL = [E(mm,ii);E(N/4+mm,ii)];
-                EcolH = [E(N/2+mm,ii);E(3*N/4+mm,ii)];
-                
-                RDcolL = RDcolL + L{nn-2*mm+1}' * EcolL;
-                RDcolH = RDcolH + H{nn-2*mm+1}' * EcolH;
+        for kk = 0:2
+            mm = (nn - kk)/2;
+            if(mod(mm, 1) ~= 0)
+                continue
             end
+            if(mm <= 0)
+                mm = mm + N/4;
+            end
+            EcolL = [E(mm,ii);E(N/4+mm,ii)];
+            EcolH = [E(N/2+mm,ii);E(3*N/4+mm,ii)];
+            RDcolL = RDcolL + L{kk+1}' * EcolL;
+            RDcolH = RDcolH + H{kk+1}' * EcolH;
         end
         RD(nn,ii) = RDcolL(1) + RDcolH(1);
         RD(N/2+nn,ii) = RDcolL(2) + RDcolH(2);
     end
 end
 clearvars RDcolL RDcolH EcolL EcolH
-% RD(1,:) = RD(2,:);
 %% Step 1-2 行多小波逆变换
 RC = zeros(N);
 for nn = 1:N/2
     for ii = 1:N
         RCrowL = [0;0];
         RCrowH = [0;0];
-        
-        for mm = 1:N/4
-            if(nn-2*mm >= 0 && nn-2*mm <= 2)
-                RDrowL = [RD(ii,mm);RD(ii,N/4+mm)];
-                RDrowH = [RD(ii,N/2+mm);RD(ii,3*N/4+mm)];
-        
-                RCrowL = RCrowL + L{nn-2*mm+1}' * RDrowL;
-                RCrowH = RCrowH + H{nn-2*mm+1}' * RDrowH;
+        for kk = 0:2
+            mm = (nn-kk)/2;
+            if(mod(mm, 1) ~= 0)
+                continue
             end
+            if(mm <= 0)
+                mm = mm + N/4;
+            end
+            RDrowL = [RD(ii,mm);RD(ii,N/4+mm)];
+            RDrowH = [RD(ii,N/2+mm);RD(ii,3*N/4+mm)];
+            RCrowL = RCrowL + L{kk+1}' * RDrowL;
+            RCrowH = RCrowH + H{kk+1}' * RDrowH;
         end
         RC(ii,nn) = RCrowL(1) + RCrowH(1);
         RC(ii,nn+N/2) = RCrowL(2) + RCrowH(2);
     end
 end
 clearvars RCrowL RCrowH RDrowL RDrowH
-% RC(:,1) = RC(:,2);
 %% Step 2-1 列后置滤波
 RB = zeros(N);
 for ii = 1:N
@@ -200,10 +207,5 @@ imshow(RB);xlabel('列后置滤波 - RB')
 subplot(3,3,9);
 imshow(RA);xlabel('行后置滤波 - RA')
 %%
-A = A(5:end,5:end);
-RA = RA(5:end,5:end);
 fprintf('\tMSE = %.6e\n', mse(RA,A))
 fprintf('\tPixel Diff: %d/%d\n', nnz(round(A*256) ~= round(RA*256)), numel(RA));
-figure
-imshow(RA)
-

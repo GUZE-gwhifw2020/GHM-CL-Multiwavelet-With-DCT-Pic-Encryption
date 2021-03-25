@@ -57,8 +57,7 @@ for iChannel = 1:size(X, 3)
                 if(N/2+nn <= N)
                     Crow = [C(ii,nn);C(ii,N/2+nn)];
                 else
-                    % Crow = [C(ii,nn);C(ii,mod(N/2+nn-1,N)+1)];
-                    Crow = [C(ii,nn);0];
+                    Crow = [C(ii,mod(N/2+nn-1,N)+1);C(ii,nn)];
                 end
                 DrowL = DrowL + L{nn-2*mm+1}*Crow;
                 DrowH = DrowH + H{nn-2*mm+1}*Crow;
@@ -80,8 +79,7 @@ for iChannel = 1:size(X, 3)
                 if(N/2+nn <= N)
                     Dcol = [D(nn,ii);D(N/2+nn,ii)];
                 else
-                    % Dcol = [D(nn,ii);D(mod(N/2+nn-1,N)+1,ii)];
-                    Dcol = [D(nn,ii);0];
+                    Dcol = [D(mod(N/2+nn-1,N)+1,ii);D(nn,ii)];
                 end
                 ErowL = ErowL + L{nn-2*mm+1}*Dcol;
                 ErowH = ErowH + H{nn-2*mm+1}*Dcol;
