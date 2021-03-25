@@ -2,15 +2,16 @@
 % ===================================== %
 % DATE OF BIRTH:    2021.03.03
 % NAME OF FILE:     CL
-% FILE OF PATH:     /..
+% FILE OF PATH:     /History
 % FUNC:
-%   CL变换测试文件。
+%   CL正逆变换测试文件。
+%   修改为CL函数后退回History文件夹。
+%   2021.03.25 - 修改边界处理问题
 % ===================================== %
 
 clc;clearvars;close all;
 %% 图片
 aP = double(imread('1.png')) / 256;
-
 tic
 
 % 图片大小N
@@ -208,4 +209,3 @@ imshow(RA);xlabel('行后置滤波 - RA')
 %%
 fprintf('\tMSE = %.6e\n', mse(RA,A))
 fprintf('\tPixel Diff: %d/%d\n', nnz(round(A*256) ~= round(RA*256)), numel(RA));
-
