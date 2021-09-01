@@ -30,44 +30,46 @@ for iChannel = 1:size(Y, 3)
         for ii = 1:N
             RDcolL = [0;0];
             RDcolH = [0;0];
-            for mm = 1:N/4
-                if(nn-2*mm >= 0 && nn-2*mm <=2)
-                    
-                    EcolL = [E(mm,ii);E(N/4+mm,ii)];
-                    EcolH = [E(N/2+mm,ii);E(3*N/4+mm,ii)];
-                    
-                    RDcolL = RDcolL + L{nn-2*mm+1}' * EcolL;
-                    RDcolH = RDcolH + H{nn-2*mm+1}' * EcolH;
+            for kk = 0:2
+                mm = (nn - kk)/2;
+                if(mod(mm, 1) ~= 0)
+                    continue
                 end
+                if(mm <= 0)
+                    mm = mm + N/4;
+                end
+                EcolL = [E(mm,ii);E(N/4+mm,ii)];
+                EcolH = [E(N/2+mm,ii);E(3*N/4+mm,ii)];
+                RDcolL = RDcolL + L{kk+1}' * EcolL;
+                RDcolH = RDcolH + H{kk+1}' * EcolH;
             end
             RD(nn,ii) = RDcolL(1) + RDcolH(1);
             RD(N/2+nn,ii) = RDcolL(2) + RDcolH(2);
         end
     end
-    clearvars RDcolL RDcolH EcolL EcolH
-    % RD(1,:) = RD(2,:);
     %% Step 1-2 行多小波逆变换
     RC = zeros(N);
     for nn = 1:N/2
         for ii = 1:N
             RCrowL = [0;0];
             RCrowH = [0;0];
-            
-            for mm = 1:N/4
-                if(nn-2*mm >= 0 && nn-2*mm <= 2)
-                    RDrowL = [RD(ii,mm);RD(ii,N/4+mm)];
-                    RDrowH = [RD(ii,N/2+mm);RD(ii,3*N/4+mm)];
-                    
-                    RCrowL = RCrowL + L{nn-2*mm+1}' * RDrowL;
-                    RCrowH = RCrowH + H{nn-2*mm+1}' * RDrowH;
+            for kk = 0:2
+                mm = (nn-kk)/2;
+                if(mod(mm, 1) ~= 0)
+                    continue
                 end
+                if(mm <= 0)
+                    mm = mm + N/4;
+                end
+                RDrowL = [RD(ii,mm);RD(ii,N/4+mm)];
+                RDrowH = [RD(ii,N/2+mm);RD(ii,3*N/4+mm)];
+                RCrowL = RCrowL + L{kk+1}' * RDrowL;
+                RCrowH = RCrowH + H{kk+1}' * RDrowH;
             end
             RC(ii,nn) = RCrowL(1) + RCrowH(1);
             RC(ii,nn+N/2) = RCrowL(2) + RCrowH(2);
         end
     end
-    clearvars RCrowL RCrowH RDrowL RDrowH
-    % RC(:,1) = RC(:,2);
     %% Step 2-1 列后置滤波
     RB = zeros(N);
     for ii = 1:N
@@ -78,7 +80,6 @@ for iChannel = 1:size(Y, 3)
             RB(2*nn,ii) = RBcol(2);
         end
     end
-    clearvars RCcol RBcol
     %% Step 2-2 行后置滤波
     RA = zeros(N);
     for ii = 1:N
